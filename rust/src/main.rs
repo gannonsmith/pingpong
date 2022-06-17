@@ -4,10 +4,19 @@ use std::net::{Shutdown, TcpListener, TcpStream, UdpSocket};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    if args.len() != 3 {
+        println!("Please enter: cargo run [protocol] [address:port]");
+        return ();
+    }
     println!("{:?}", args);
 
     let protocol = &args[1];
     let address = &args[2];
+
+    if address.len() != 14 {
+        println!("Please enter: cargo run [protocol] [address:port]");
+        return ();
+    }
 
     if protocol == "tcp" {
         tcp_listener(address)
@@ -15,6 +24,7 @@ fn main() {
         udp_listener(address)
     } else {
         println!("Please enter: cargo run [protocol] [address:port]");
+        return ();
     }
 }
 
