@@ -1,33 +1,27 @@
-use std::{/*env,*/ thread};
+use std::{env, thread};
 use std::io::prelude::*;
 use std::net::{Shutdown, TcpListener, TcpStream, UdpSocket};
 
 fn main() {
-    //Read arguments
-    //let args: Vec<String> = env::args().collect();
-    //println!("{:?}", args);
+    let args: Vec<String> = env::args().collect();
+    println!("{:?}", args);
 
-    //let protocol = &args[1];
-    //let address = &args[2];
+    let protocol = &args[1];
+    let address = &args[2];
 
-    let address = "127.0.0.1:8000";
-    udp_listener(address);
-    //tcp_listener(address);
-
+    if protocol == "tcp" {
+        tcp_listener(address)
+    } else if protocol == "udp" {
+        udp_listener(address)
+    } else {
+        println!("Please enter: cargo run [protocol] [address:port]");
+    }
 }
+
 
 fn udp_listener(address: &str) {
     let socket = UdpSocket::bind(address).expect("Binding failed...");
     println!("Socket binded to {}", address);
-
-   /* match socket.connect(address) {
-        Ok(_) => {
-            println!("New connection: {}", socket.peer_addr().expect("Connection failed..."))
-        },
-        Err(e) => {
-            print!("Error: {}", e);
-        }
-    } */
 
     let mut buffer: [u8; 1024] = [0; 1024];
 
@@ -70,6 +64,7 @@ fn tcp_listener(address: &str) {
     }
     drop(listener);
 }
+
 
 fn handle_tcp_connection(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
