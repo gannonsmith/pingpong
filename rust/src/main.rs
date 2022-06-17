@@ -11,18 +11,54 @@ fn main() {
     //let address = &args[2];
 
     let address = "127.0.0.1:8000";
-    tcp_listener(address);
+    udp_listener(address);
+    //tcp_listener(address);
 
 }
 
+fn udp_listener(address: &str) {
+    let socket = UdpSocket::bind(address).expect("Binding failed...");
+    println!("Socket binded to {}", address);
+
+   /* match socket.connect(address) {
+        Ok(_) => {
+            println!("New connection: {}", socket.peer_addr().expect("Connection failed..."))
+        },
+        Err(e) => {
+            print!("Error: {}", e);
+        }
+    } */
+
+    let mut buffer: [u8; 1024] = [0; 1024];
+
+    println!("Awaiting responses...");
+    match socket.recv_from(&mut buffer) {
+        Ok(new_addr) => {
+            println!("Message received");
+            let message = String::from_utf8_lossy(&buffer[..]);
+            if message.contains("ping") {
+                socket.send_to("pong\n".as_bytes(), new_addr.1).expect("Send failed...");
+            } else if message.contains("pong") {
+                socket.send_to("ping\n".as_bytes(), new_addr.1).expect("Send failed...");
+            } else {
+                socket.send_to("error\n".as_bytes(), new_addr.1).expect("Send failed...");
+            }
+        },
+        Err(e) => {
+            println!("Receiving error: {}", e);
+        }
+    }
+}
+
+
 fn tcp_listener(address: &str) {
-    let listener = TcpListener::bind(String::from(address)).unwrap();
+    let listener = TcpListener::bind(address).expect("Binding Failed...");
     println!("Server listening on {}", address);
 
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
-                println!("New connection: {}", stream.peer_addr().unwrap());
+                println!("New connection: {}", stream.peer_addr().expect("Connection failed..."));
                 thread::spawn(move|| {
                     handle_tcp_connection(stream);
                 });
