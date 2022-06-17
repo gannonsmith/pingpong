@@ -10,12 +10,13 @@ fn main() {
     //let protocol = &args[1];
     //let address = &args[2];
 
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let listener = TcpListener::bind("127.0.0.1:8000").unwrap();
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
-        handle_connection(stream);
+        println!("Connection Success!");
+        //handle_connection(stream);
     }
 }
 
@@ -24,5 +25,15 @@ fn handle_connection(mut stream: TcpStream) {
 
     stream.read(&mut buffer).unwrap();
 
-    println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
+    if String::from_utf8_lossy(&buffer[..]) == "ping" {
+        //write pong
+    }
+    if String::from_utf8_lossy(&buffer[..]) == "pong" {
+        //write ping
+    }
+
+    //let response = "HTTP/1.1 200 OK\r\n\r\n";
+
+    //stream.write(response.as_bytes()).unwrap();
+   // stream.flush().unwrap();
 }
