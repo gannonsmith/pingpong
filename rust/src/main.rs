@@ -1,6 +1,6 @@
-use std::{env, thread};
+use std::{/*env,*/ thread};
 use std::io::prelude::*;
-use std::net::{Shutdown, TcpListener, TcpStream};
+use std::net::{Shutdown, TcpListener, TcpStream, UdpSocket};
 
 fn main() {
     //Read arguments
@@ -10,16 +10,21 @@ fn main() {
     //let protocol = &args[1];
     //let address = &args[2];
 
-    let listener = TcpListener::bind("127.0.0.1:8000").unwrap();
-    println!("Server listening on port 8000");
+    let address = "127.0.0.1:8000";
+    tcp_listener(address);
+
+}
+
+fn tcp_listener(address: &str) {
+    let listener = TcpListener::bind(String::from(address)).unwrap();
+    println!("Server listening on {}", address);
 
     for stream in listener.incoming() {
-        println!("i");
         match stream {
             Ok(stream) => {
                 println!("New connection: {}", stream.peer_addr().unwrap());
                 thread::spawn(move|| {
-                    handle_connection(stream);
+                    handle_tcp_connection(stream);
                 });
             }
             Err(e) => {
@@ -30,25 +35,41 @@ fn main() {
     drop(listener);
 }
 
-fn handle_connection(mut stream: TcpStream) {
+fn handle_tcp_connection(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
+    let mut counter = 0;
 
-   while match stream.read(&mut buffer) {
-       Ok(size) => {
-           println!("{}::{}", String::from_utf8_lossy(&buffer[..]).replace("\n", ""), String::from("ping"));
-           if String::from_utf8_lossy(&buffer[..]).replace("\n", "") == String::from("ping") {
-               stream.write("pong".as_bytes()).unwrap();
-           } else if String::from_utf8_lossy(&buffer[..]).replace("\n", "") == String::from("pong") {
-               stream.write("ping".as_bytes()).unwrap();
+   'reading_stream: while match stream.read(&mut buffer) {
+
+       Ok(_size) => {
+           let message = String::from_utf8_lossy(&buffer[..]);
+           if message.contains("ping") {
+               stream.write("pong\n".as_bytes()).unwrap();
+           } else if message.contains("pong") {
+               stream.write("ping\n".as_bytes()).unwrap();
            } else {
-               stream.write("error".as_bytes()).unwrap();
+               stream.write("error\n".as_bytes()).unwrap();
+           }
+           counter += 1;
+           if counter == 3 {
+               println!("Three messages transmitted, closing client's stream.");
+               stream.write("Three messages transmitted, closing client's stream.\n".as_bytes()).unwrap();
+               match stream.shutdown(Shutdown::Both) {
+                   Ok(_) => {
+                       println!("Shutdown successful.");
+                       break 'reading_stream;
+                   },
+                   Err(_) => {
+                       println!("Shutdown unsuccessful.");
+                   }
+               }
            }
            true
        },
        Err(_) => {
            println!("An error occurred, terminating connection with {}", stream.peer_addr().unwrap());
            stream.shutdown(Shutdown::Both).unwrap();
-           false
+           break 'reading_stream;
        }
    } {}
 }
