@@ -78,10 +78,9 @@ fn tcp_listener(address: &str) {
 
 fn handle_tcp_connection(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
-    let mut counter = 0;
+    let mut count = 0;
 
    'reading_stream: while match stream.read(&mut buffer) {
-
        Ok(_size) => {
            let message = String::from_utf8_lossy(&buffer[..]);
            if message.contains("ping") {
@@ -91,8 +90,8 @@ fn handle_tcp_connection(mut stream: TcpStream) {
            } else {
                stream.write("error\n".as_bytes()).unwrap();
            }
-           counter += 1;
-           if counter == 3 {
+           count += 1;
+           if count == 3 {
                println!("Three messages transmitted, closing client's stream.");
                stream.write("Three messages transmitted, closing client's stream.\n".as_bytes()).unwrap();
                match stream.shutdown(Shutdown::Both) {
